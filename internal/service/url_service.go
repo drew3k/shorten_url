@@ -1,6 +1,8 @@
 package service
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"errors"
 	"github.com/google/uuid"
 	"shortUrl/shorten_url/internal/domain"
@@ -21,11 +23,21 @@ func NewUrlRepository(repo repository.URLRepository) *UrlService {
 	return &UrlService{repo: repo}
 }
 
+func generateHash() string {
+	randomString := uuid.New().String()
+
+	hashed := sha1.New()
+	hashed.Write([]byte(randomString))
+	hash := hex.EncodeToString(hashed.Sum(nil))
+
+	return hash[:6]
+}
+
 func (s *UrlService) Create(original string) (*domain.URL, error) {
 	url := &domain.URL{
 		ID:        uuid.New().String(),
 		Original:  original,
-		Shortened: "",
+		Shortened: generateHash(),
 		CreatedAt: time.Now(),
 	}
 
