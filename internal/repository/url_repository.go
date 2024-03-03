@@ -7,22 +7,22 @@ type URLRepository interface {
 	Get(id string) (*domain.URL, error)
 }
 
-type inMemoryURLRepository struct {
+type InMemoryURLRepository struct {
 	urls map[string]*domain.URL
 }
 
-func NewInMemoryURLRepository() URLRepository {
-	return &inMemoryURLRepository{
+func NewInMemoryURLRepository() *InMemoryURLRepository {
+	return &InMemoryURLRepository{
 		urls: make(map[string]*domain.URL),
 	}
 }
 
-func (r *inMemoryURLRepository) Create(url *domain.URL) error {
+func (r *InMemoryURLRepository) Create(url *domain.URL) error {
 	r.urls[url.ID] = url
 	return nil
 }
 
-func (r *inMemoryURLRepository) Get(id string) (*domain.URL, error) {
+func (r *InMemoryURLRepository) Get(id string) (*domain.URL, error) {
 	url, ok := r.urls[id]
 	if !ok {
 		return nil, nil
