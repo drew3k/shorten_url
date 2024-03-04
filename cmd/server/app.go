@@ -15,7 +15,7 @@ func Run() error {
 	urlHandler := http.NewURLHandler(urlService)
 
 	r.POST("/shorten", urlHandler.ShortenURL)
-	r.GET(":id", urlHandler.RedirectURL)
+	r.GET("/shorten/:id", urlHandler.RedirectURL)
 
 	return r.Run(":8080")
 }
