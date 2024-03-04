@@ -7,19 +7,17 @@ import (
 
 type URLRepository interface {
 	Create(url *domain.URL) error
-	Get(id int) (*domain.URL, error)
+	Get(shortened string) (*domain.URL, error)
 }
 
 type InMemoryURLRepository struct {
-	urls    map[int]*domain.URL
-	counter int
-	mu      sync.Mutex
+	urls map[string]*domain.URL
+	mu   sync.Mutex
 }
 
 func NewInMemoryURLRepository() *InMemoryURLRepository {
 	return &InMemoryURLRepository{
-		urls:    make(map[int]*domain.URL),
-		counter: 1,
+		urls: make(map[string]*domain.URL),
 	}
 }
 
@@ -27,16 +25,15 @@ func (r *InMemoryURLRepository) Create(url *domain.URL) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	url.ID = r.counter
-
-	r.urls[url.ID] = url
-	r.counter++
-
+	r.urls[url.Shortened] = url
 	return nil
 }
 
-func (r *InMemoryURLRepository) Get(id int) (*domain.URL, error) {
-	url, ok := r.urls[id]
+func (r *InMemoryURLRepository) Get(shortened string) (*domain.URL, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	url, ok := r.urls[shortened]
 	if !ok {
 		return nil, nil
 	}
