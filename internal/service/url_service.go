@@ -12,7 +12,7 @@ import (
 
 type URLService interface {
 	Create(original string) (*domain.URL, error)
-	Get(id string) (*domain.URL, error)
+	Get(id int) (*domain.URL, error)
 }
 
 type UrlService struct {
@@ -35,7 +35,7 @@ func generateHash() string {
 
 func (s *UrlService) Create(original string) (*domain.URL, error) {
 	url := &domain.URL{
-		ID:        uuid.New().String(),
+		ID:        1,
 		Original:  original,
 		Shortened: generateHash(),
 		CreatedAt: time.Now(),
@@ -49,7 +49,7 @@ func (s *UrlService) Create(original string) (*domain.URL, error) {
 	return url, nil
 }
 
-func (s *UrlService) Get(id string) (*domain.URL, error) {
+func (s *UrlService) Get(id int) (*domain.URL, error) {
 	url, err := s.repo.Get(id)
 	if err != nil {
 		return url, errors.New("such url doesn't exist")
