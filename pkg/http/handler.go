@@ -35,7 +35,7 @@ func (h *URLHandler) ShortenURL(c *gin.Context) {
 }
 
 func (h *URLHandler) RedirectURL(c *gin.Context) {
-	id := c.Param("id")
+	var id int
 
 	url, err := h.service.Get(id)
 	if err != nil {
