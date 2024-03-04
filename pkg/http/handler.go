@@ -4,13 +4,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"shortUrl/shorten_url/internal/service"
+	"strconv"
 )
 
 type URLHandler struct {
 	service service.URLService
 }
 
-var requestBody struct {
+type RequestBody struct {
 	Original string `json:"original"`
 }
 
@@ -21,12 +22,13 @@ func NewURLHandler(service service.URLService) *URLHandler {
 }
 
 func (h *URLHandler) ShortenURL(c *gin.Context) {
-	if err := c.BindJSON(&requestBody); err != nil {
+	var param *RequestBody
+	if err := c.BindJSON(&param); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	shortenedUrl, err := h.service.Create(requestBody.Original)
+	shortenedUrl, err := h.service.Create(param.Original)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to shorten URL"})
 		return
@@ -35,9 +37,19 @@ func (h *URLHandler) ShortenURL(c *gin.Context) {
 }
 
 func (h *URLHandler) RedirectURL(c *gin.Context) {
-	var id int
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID not provided"})
+		return
+	}
 
-	url, err := h.service.Get(id)
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+		return
+	}
+
+	url, err := h.service.Get(idInt)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve URL"})
 		return
