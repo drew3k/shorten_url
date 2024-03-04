@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"shortUrl/shorten_url/internal/service"
-	"strconv"
 )
 
 type URLHandler struct {
@@ -36,20 +35,14 @@ func (h *URLHandler) ShortenURL(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"shortened_url": shortenedUrl.Shortened})
 }
 
-func (h *URLHandler) RedirectURL(c *gin.Context) {
-	id := c.Param("id")
-	if id == "" {
+func (h *URLHandler) GetURL(c *gin.Context) {
+	shortened := c.Param("shortened")
+	if shortened == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "ID not provided"})
 		return
 	}
 
-	idInt, err := strconv.Atoi(id)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
-		return
-	}
-
-	url, err := h.service.Get(idInt)
+	url, err := h.service.Get(shortened)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve URL"})
 		return
@@ -58,5 +51,5 @@ func (h *URLHandler) RedirectURL(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "URL not found"})
 		return
 	}
-	c.Redirect(http.StatusPermanentRedirect, url.Original)
+	c.JSON(http.StatusOK, gin.H{"original_url": url.Original})
 }
