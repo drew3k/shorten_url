@@ -4,7 +4,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"errors"
-	"github.com/google/uuid"
+	"fmt"
 	"shortUrl/shorten_url/internal/domain"
 	"shortUrl/shorten_url/internal/repository"
 	"time"
@@ -12,7 +12,7 @@ import (
 
 type URLService interface {
 	Create(original string) (*domain.URL, error)
-	Get(id int) (*domain.URL, error)
+	Get(shortened string) (*domain.URL, error)
 }
 
 type UrlService struct {
@@ -23,21 +23,19 @@ func NewUrlRepository(repo repository.URLRepository) *UrlService {
 	return &UrlService{repo: repo}
 }
 
-func generateHash() string {
-	randomString := uuid.New().String()
-
+func generateHash(original string) string {
 	hashed := sha1.New()
-	hashed.Write([]byte(randomString))
+	hashed.Write([]byte(original))
 	hash := hex.EncodeToString(hashed.Sum(nil))
 
 	return hash[:6]
 }
 
 func (s *UrlService) Create(original string) (*domain.URL, error) {
+	shortened := generateHash(original)
 	url := &domain.URL{
-		ID:        1,
 		Original:  original,
-		Shortened: generateHash(),
+		Shortened: fmt.Sprintf("https://test/%s", shortened),
 		CreatedAt: time.Now(),
 	}
 
@@ -49,8 +47,8 @@ func (s *UrlService) Create(original string) (*domain.URL, error) {
 	return url, nil
 }
 
-func (s *UrlService) Get(id int) (*domain.URL, error) {
-	url, err := s.repo.Get(id)
+func (s *UrlService) Get(shortened string) (*domain.URL, error) {
+	url, err := s.repo.Get(shortened)
 	if err != nil {
 		return url, errors.New("such url doesn't exist")
 	}
