@@ -21,7 +21,7 @@ func NewURLHandler(service service.URLService) *URLHandler {
 }
 
 func (h *URLHandler) ShortenURL(c *gin.Context) {
-	var param *RequestBody
+	var param RequestBody
 	if err := c.BindJSON(&param); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
