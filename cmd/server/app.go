@@ -54,13 +54,14 @@ func Run() error {
 		if update.Message == nil {
 			continue
 		}
-
 		if update.Message.Text != "" {
 			if update.Message.IsCommand() {
 				switch update.Message.Command() {
 				case "start":
 					// Отправляем сообщение с кнопками
-					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выберите действие:")
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Привет, я бот, который сокращает твою ссылку"+
+						"и делает QR-код.")
+					msg2 := tgbotapi.NewMessage(update.Message.Chat.ID, "Отправьте свою ссылку")
 					msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
 						tgbotapi.NewKeyboardButtonRow(
 							tgbotapi.NewKeyboardButton("Сократить ссылку"),
@@ -70,6 +71,7 @@ func Run() error {
 						),
 					)
 					bot.Send(msg)
+					bot.Send(msg2)
 
 				default:
 					// Отвечаем на неизвестные команды
@@ -86,25 +88,29 @@ func Run() error {
 						continue
 					}
 
+					// Отправляем сокращенную ссылку
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Сокращенная ссылка: "+shortenedURL.Shortened)
+					bot.Send(msg)
+
+					msg3 := tgbotapi.NewMessage(update.Message.Chat.ID, "Выберите дальнейшее действие:")
+					bot.Send(msg3)
+
+				} else {
 					// Генерируем QR-код для сокращенной ссылки
+					shortenedURL, err := urlService.Create(update.Message.Text)
+					if err != nil {
+						log.Printf("Ошибка при сокращении URL: %v", err)
+						continue
+					}
 					qrCodeFilePath := "qr_code.png"
 					err = qrcode.WriteFile(shortenedURL.Shortened, qrcode.Medium, 256, qrCodeFilePath)
 					if err != nil {
 						log.Printf("Ошибка при генерации QR-кода: %v", err)
 						continue
 					}
-
-					// Отправляем сокращенную ссылку и QR-код в ответ
-					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Сокращенная ссылка: "+shortenedURL.Shortened)
-					bot.Send(msg)
-
+					// Отправляем QR-код в ответ
 					qrCodeMsg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, qrCodeFilePath)
 					bot.Send(qrCodeMsg)
-
-				} else {
-					// Отвечаем на сообщение бота
-					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Введите ссылку для сокращения. Пример: https:// или http://")
-					bot.Send(msg)
 				}
 			}
 		}
