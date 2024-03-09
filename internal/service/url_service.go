@@ -3,7 +3,6 @@ package service
 import (
 	"crypto/sha1"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"shortUrl/shorten_url/internal/domain"
 	"shortUrl/shorten_url/internal/repository"
@@ -12,7 +11,6 @@ import (
 
 type URLService interface {
 	Create(original string) (*domain.URL, error)
-	Get(shortened string) (*domain.URL, error)
 }
 
 type UrlService struct {
@@ -42,15 +40,6 @@ func (s *UrlService) Create(original string) (*domain.URL, error) {
 	err := s.repo.Create(url)
 	if err != nil {
 		return nil, err
-	}
-
-	return url, nil
-}
-
-func (s *UrlService) Get(shortened string) (*domain.URL, error) {
-	url, err := s.repo.Get(shortened)
-	if err != nil {
-		return url, errors.New("such url doesn't exist")
 	}
 
 	return url, nil
