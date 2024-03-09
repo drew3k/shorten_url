@@ -7,7 +7,7 @@
 1. Клонируйте репозиторий:
 
     ```bash
-    git clone https://github.com/yourusername/yourproject.git
+    git clone https://github.com/drew3k/shorten_url.git
     ```
 
 2. Перейдите в директорию проекта:
