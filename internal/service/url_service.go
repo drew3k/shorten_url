@@ -19,8 +19,8 @@ type UrlService struct {
 	repo repository.URLRepository
 }
 
-func NewUrlRepository(repo repository.URLRepository) *UrlService {
-	return &UrlService{repo: repo}
+func NewUrlService(repo repository.URLRepository) *UrlService {
+	return &UrlService{repo}
 }
 
 func generateHash(original string) string {
