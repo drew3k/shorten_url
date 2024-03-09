@@ -39,7 +39,6 @@ func Run() error {
 	urlHandler := http.NewURLHandler(urlService)
 
 	r.POST("/shorten", urlHandler.ShortenURL)
-	r.GET("/shorten/:id", urlHandler.GetURL)
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
