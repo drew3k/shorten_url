@@ -70,10 +70,7 @@ func Run() error {
 						),
 					)
 					bot.Send(msg)
-				//case "short":
-				//	qrCodeFilePath := "qr_code.png"
-				//	qrCodeMsg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, qrCodeFilePath)
-				//	bot.Send(qrCodeMsg)
+
 				default:
 					// Отвечаем на неизвестные команды
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Я не знаю такой команды.")
@@ -100,6 +97,9 @@ func Run() error {
 					// Отправляем сокращенную ссылку и QR-код в ответ
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Сокращенная ссылка: "+shortenedURL.Shortened)
 					bot.Send(msg)
+
+					qrCodeMsg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, qrCodeFilePath)
+					bot.Send(qrCodeMsg)
 
 				} else {
 					// Отвечаем на сообщение бота
