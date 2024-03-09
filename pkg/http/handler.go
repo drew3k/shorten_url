@@ -34,22 +34,3 @@ func (h *URLHandler) ShortenURL(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"shortened_url": shortenedUrl.Shortened})
 }
-
-func (h *URLHandler) GetURL(c *gin.Context) {
-	shortened := c.Param("shortened")
-	if shortened == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID not provided"})
-		return
-	}
-
-	url, err := h.service.Get(shortened)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve URL"})
-		return
-	}
-	if url == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "URL not found"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"original_url": url.Original})
-}
