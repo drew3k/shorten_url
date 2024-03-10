@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/skip2/go-qrcode"
 	"log"
 	"os"
 	"shortUrl/shorten_url/internal/repository"
@@ -11,7 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/joho/godotenv"
-	"github.com/skip2/go-qrcode"
 )
 
 func Run() error {
@@ -42,6 +42,8 @@ func Run() error {
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
+
+	qrCodeFilePath := "qr_code.png"
 
 	updates, err := bot.GetUpdatesChan(u)
 	if err != nil {
@@ -87,27 +89,18 @@ func Run() error {
 						continue
 					}
 
+					err = qrcode.WriteFile(shortenedURL.Shortened, qrcode.Medium, 256, qrCodeFilePath)
+					if err != nil {
+						log.Printf("Ошибка при генерации QR-кода: %v", err)
+						continue
+					}
 					// Отправляем сокращенную ссылку
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Сокращенная ссылка: "+shortenedURL.Shortened)
 					bot.Send(msg)
 
 					msg3 := tgbotapi.NewMessage(update.Message.Chat.ID, "Выберите дальнейшее действие:")
 					bot.Send(msg3)
-
 				} else {
-					// Генерируем QR-код для сокращенной ссылки
-					shortenedURL, err := urlService.Create(update.Message.Text)
-					if err != nil {
-						log.Printf("Ошибка при сокращении URL: %v", err)
-						continue
-					}
-					qrCodeFilePath := "qr_code.png"
-					err = qrcode.WriteFile(shortenedURL.Shortened, qrcode.Medium, 256, qrCodeFilePath)
-					if err != nil {
-						log.Printf("Ошибка при генерации QR-кода: %v", err)
-						continue
-					}
-					// Отправляем QR-код в ответ
 					qrCodeMsg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, qrCodeFilePath)
 					bot.Send(qrCodeMsg)
 				}
