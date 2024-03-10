@@ -63,17 +63,18 @@ func (s *Server) handleUpdate(update tgbotapi.Update) {
 				msg2 := tgbotapi.NewMessage(update.Message.Chat.ID, "Отправьте свою ссылку")
 				msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
 					tgbotapi.NewKeyboardButtonRow(
-						tgbotapi.NewKeyboardButton("Сократить ссылку"),
-					),
-					tgbotapi.NewKeyboardButtonRow(
-						tgbotapi.NewKeyboardButton("Сгенерировать QR-код"),
+						tgbotapi.NewKeyboardButton("🔗Сокращенная ссылка"),
 					),
 				)
 				s.bot.Send(msg)
+				msg2.ReplyMarkup = tgbotapi.NewReplyKeyboard(
+					tgbotapi.NewKeyboardButtonRow(
+						tgbotapi.NewKeyboardButton("🤯Сгенерировать QR-код"),
+					))
 				s.bot.Send(msg2)
 
 			default:
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Я не знаю такой команды.")
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "🤷🏻‍Я не знаю такой команды.")
 				s.bot.Send(msg)
 			}
 		} else {
