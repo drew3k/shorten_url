@@ -4,6 +4,7 @@ import (
 	"github.com/skip2/go-qrcode"
 	"log"
 	"os"
+	"shortUrl/shorten_url/internal/domain"
 	"shortUrl/shorten_url/internal/repository"
 	"shortUrl/shorten_url/internal/service"
 	"shortUrl/shorten_url/pkg/http"
@@ -15,8 +16,9 @@ import (
 )
 
 type Server struct {
-	router *gin.Engine
-	bot    *tgbotapi.BotAPI
+	router       *gin.Engine
+	bot          *tgbotapi.BotAPI
+	shortenedURL *domain.URL
 }
 
 func NewServer() *Server {
@@ -54,53 +56,67 @@ func (s *Server) handleUpdate(update tgbotapi.Update) {
 		return
 	}
 
+	var shortenedURL *domain.URL
+
 	if update.Message.Text != "" {
 		if update.Message.IsCommand() {
 			switch update.Message.Command() {
 			case "start":
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Привет, я бот, который сокращает твою ссылку"+
 					" и делает QR-код.")
-				msg2 := tgbotapi.NewMessage(update.Message.Chat.ID, "Отправьте свою ссылку")
 				msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
 					tgbotapi.NewKeyboardButtonRow(
-						tgbotapi.NewKeyboardButton("🔗Сокращенная ссылка"),
+						tgbotapi.NewKeyboardButton("🔗Сократить ссылку"),
+						tgbotapi.NewKeyboardButton("🤯Сгенерировать QR-код"),
+						tgbotapi.NewKeyboardButton("📜Все сразу"),
 					),
 				)
 				s.bot.Send(msg)
-				msg2.ReplyMarkup = tgbotapi.NewReplyKeyboard(
-					tgbotapi.NewKeyboardButtonRow(
-						tgbotapi.NewKeyboardButton("🤯Сгенерировать QR-код"),
-					))
-				s.bot.Send(msg2)
-
 			default:
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "🤷🏻‍Я не знаю такой команды.")
 				s.bot.Send(msg)
 			}
 		} else {
-			if strings.HasPrefix(update.Message.Text, "http://") || strings.HasPrefix(update.Message.Text, "https://") {
-				urlRepo := repository.NewInMemoryURLRepository()
-				urlService := service.NewUrlService(urlRepo)
-				shortenedURL, err := urlService.Create(update.Message.Text)
-				if err != nil {
-					log.Printf("Ошибка при сокращении URL: %v", err)
-					return
-				}
-
-				err = qrcode.WriteFile(shortenedURL.Shortened, qrcode.Medium, 256, qrCodeFilePath)
-				if err != nil {
-					log.Printf("Ошибка при генерации QR-кода: %v", err)
-					return
-				}
-
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Сокращенная ссылка: "+shortenedURL.Shortened)
+			switch update.Message.Text {
+			case "🔗Сократить ссылку":
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Отправьте свою ссылку")
 				s.bot.Send(msg)
-
-				msg3 := tgbotapi.NewMessage(update.Message.Chat.ID, "Выберите дальнейшее действие:")
-				s.bot.Send(msg3)
-			} else {
+			case "🤯Сгенерировать QR-код":
 				qrCodeMsg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, qrCodeFilePath)
 				s.bot.Send(qrCodeMsg)
+				if err := os.Remove(qrCodeFilePath); err != nil {
+					log.Printf("Ошибка при удалении QR-кода %v", err)
+				}
+			case "📜Все сразу":
+				if shortenedURL != nil {
+					msg2 := tgbotapi.NewMessage(update.Message.Chat.ID, "Сначала сократите ссылку.")
+					s.bot.Send(msg2)
+					return
+				}
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Отправьте свою ссылку")
+				s.bot.Send(msg)
+			default:
+				if strings.HasPrefix(update.Message.Text, "http://") || strings.HasPrefix(update.Message.Text, "https://") {
+					urlRepo := repository.NewInMemoryURLRepository()
+					urlService := service.NewUrlService(urlRepo)
+					shortenedURL, err := urlService.Create(update.Message.Text)
+					if err != nil {
+						log.Printf("Ошибка при сокращении URL: %v", err)
+						return
+					}
+
+					// Генерация QR-кода после успешного сокращения ссылки
+					err = qrcode.WriteFile(shortenedURL.Shortened, qrcode.Medium, 256, qrCodeFilePath)
+					if err != nil {
+						log.Printf("Ошибка при генерации QR-кода: %v", err)
+					}
+
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Сокращенная ссылка: "+shortenedURL.Shortened)
+					s.bot.Send(msg)
+				} else {
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "🤷🏻‍Я не знаю такой команды.")
+					s.bot.Send(msg)
+				}
 			}
 		}
 	}
