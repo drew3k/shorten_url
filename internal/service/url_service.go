@@ -26,14 +26,15 @@ func generateHash(original string) string {
 	hashed.Write([]byte(original))
 	hash := hex.EncodeToString(hashed.Sum(nil))
 
-	return hash[:6]
+	return hash[:5]
 }
 
 func (s *UrlService) Create(original string) (*domain.URL, error) {
 	shortened := generateHash(original)
+	customDomain := "https://shrt.ly/"
 	url := &domain.URL{
 		Original:  original,
-		Shortened: fmt.Sprintf("https://test/%s", shortened),
+		Shortened: fmt.Sprintf("%s%s", customDomain, shortened),
 		CreatedAt: time.Now(),
 	}
 
