@@ -61,7 +61,7 @@ func Run() error {
 				case "start":
 					// Отправляем сообщение с кнопками
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Привет, я бот, который сокращает твою ссылку"+
-						"и делает QR-код.")
+						" и делает QR-код.")
 					msg2 := tgbotapi.NewMessage(update.Message.Chat.ID, "Отправьте свою ссылку")
 					msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
 						tgbotapi.NewKeyboardButtonRow(
