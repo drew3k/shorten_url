@@ -93,8 +93,7 @@ func (s *Server) processLink(update tgbotapi.Update) {
 		s.bot.Send(msg)
 		s.shortenRequested = false
 	} else {
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "🤷🏻‍Я не знаю такой команды.")
-		s.bot.Send(msg)
+		s.unknownCommand(update)
 	}
 }
 
@@ -112,9 +111,13 @@ func (s *Server) handleCommand(update tgbotapi.Update) {
 		)
 		s.bot.Send(msg)
 	default:
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "🤷🏻‍Я не знаю такой команды.")
-		s.bot.Send(msg)
+		s.unknownCommand(update)
 	}
+}
+
+func (s *Server) unknownCommand(update tgbotapi.Update) {
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "🤷🏻‍Я не знаю такой команды.")
+	s.bot.Send(msg)
 }
 
 func (s *Server) requestLink(update tgbotapi.Update) {
