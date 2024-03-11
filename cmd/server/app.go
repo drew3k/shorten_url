@@ -22,6 +22,8 @@ type Server struct {
 	shortenRequested bool
 }
 
+const qrCodeFilePath = "qr_code.png"
+
 func NewServer() *Server {
 	return &Server{
 		router: gin.Default(),
@@ -51,92 +53,111 @@ func (s *Server) Initialize() error {
 }
 
 func (s *Server) handleUpdate(update tgbotapi.Update) {
-	qrCodeFilePath := "qr_code.png"
 
 	if update.Message == nil {
 		return
 	}
 
 	if update.Message.IsCommand() {
-		switch update.Message.Command() {
-		case "start":
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Привет, я бот, который сокращает твою ссылку"+
-				" и делает QR-код.")
-			msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
-				tgbotapi.NewKeyboardButtonRow(
-					tgbotapi.NewKeyboardButton("🔗Сократить ссылку"),
-					tgbotapi.NewKeyboardButton("🤯Сгенерировать QR-код"),
-					tgbotapi.NewKeyboardButton("📜Все сразу"),
-				),
-			)
-			s.bot.Send(msg)
-		default:
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "🤷🏻‍Я не знаю такой команды.")
-			s.bot.Send(msg)
-		}
+		s.handleCommand(update)
 		return
 	}
 
 	switch update.Message.Text {
 	case "🔗Сократить ссылку":
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Отправьте свою ссылку")
-		s.bot.Send(msg)
-		s.shortenRequested = true
+		s.requestLink(update)
 	case "🤯Сгенерировать QR-код":
-		if s.shortenedURL != nil {
-			err := qrcode.WriteFile(s.shortenedURL.Shortened, qrcode.Medium, 256, qrCodeFilePath)
-			if err != nil {
-				log.Printf("Ошибка при генерации QR-кода: %v", err)
-			} else {
-				qrCodeMsg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, qrCodeFilePath)
-				s.bot.Send(qrCodeMsg)
-				if err := os.Remove(qrCodeFilePath); err != nil {
-					log.Printf("Ошибка удаления QR-кода %v", err)
-				}
-			}
-		} else {
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Сначала сократите ссылку.")
-			s.bot.Send(msg)
-		}
+		s.generateQRCode(update, qrCodeFilePath)
 	case "📜Все сразу":
-		if s.shortenedURL != nil {
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Сокращенная ссылка: "+s.shortenedURL.Shortened)
-			s.bot.Send(msg)
-
-			if err := qrcode.WriteFile(s.shortenedURL.Shortened, qrcode.Medium, 256, qrCodeFilePath); err != nil {
-				log.Printf("Ошибка при генерации QR-кода: %v", err)
-			} else {
-				qrCodeMsg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, qrCodeFilePath)
-				s.bot.Send(qrCodeMsg)
-				if err := os.Remove(qrCodeFilePath); err != nil {
-					log.Printf("Ошибка удаления QR-кода %v", err)
-				}
-			}
-		} else {
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Сначала сократите ссылку.")
-			s.bot.Send(msg)
-		}
+		s.allAtOnce(update, qrCodeFilePath)
 	default:
-		if strings.HasPrefix(update.Message.Text, "http://") || strings.HasPrefix(update.Message.Text, "https://") {
-			urlRepo := repository.NewInMemoryURLRepository()
-			urlService := service.NewUrlService(urlRepo)
-			shortenedURL, err := urlService.Create(update.Message.Text)
-			if err != nil {
-				log.Printf("Ошибка при сокращении URL: %v", err)
-				return
-			}
+		s.processLink(update)
+	}
+}
 
-			if s.shortenRequested {
-				s.shortenedURL = shortenedURL
-			}
-
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Сокращенная ссылка: "+shortenedURL.Shortened)
-			s.bot.Send(msg)
-			s.shortenRequested = false
-		} else {
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "🤷🏻‍Я не знаю такой команды.")
-			s.bot.Send(msg)
+func (s *Server) processLink(update tgbotapi.Update) {
+	if strings.HasPrefix(update.Message.Text, "http://") || strings.HasPrefix(update.Message.Text, "https://") {
+		urlRepo := repository.NewInMemoryURLRepository()
+		urlService := service.NewUrlService(urlRepo)
+		shortenedURL, err := urlService.Create(update.Message.Text)
+		if err != nil {
+			log.Printf("Ошибка при сокращении URL: %v", err)
+			return
 		}
+
+		if s.shortenRequested {
+			s.shortenedURL = shortenedURL
+		}
+
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Сокращенная ссылка: "+shortenedURL.Shortened)
+		s.bot.Send(msg)
+		s.shortenRequested = false
+	} else {
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "🤷🏻‍Я не знаю такой команды.")
+		s.bot.Send(msg)
+	}
+}
+
+func (s *Server) handleCommand(update tgbotapi.Update) {
+	switch update.Message.Command() {
+	case "start":
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Привет, я бот, который сокращает твою ссылку"+
+			" и делает QR-код.")
+		msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton("🔗Сократить ссылку"),
+				tgbotapi.NewKeyboardButton("🤯Сгенерировать QR-код"),
+				tgbotapi.NewKeyboardButton("📜Все сразу"),
+			),
+		)
+		s.bot.Send(msg)
+	default:
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "🤷🏻‍Я не знаю такой команды.")
+		s.bot.Send(msg)
+	}
+}
+
+func (s *Server) requestLink(update tgbotapi.Update) {
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Отправьте свою ссылку")
+	s.bot.Send(msg)
+	s.shortenRequested = true
+}
+
+func (s *Server) generateQRCode(update tgbotapi.Update, qrCodeFilePath string) {
+	if s.shortenedURL != nil {
+		err := qrcode.WriteFile(s.shortenedURL.Shortened, qrcode.Medium, 256, qrCodeFilePath)
+		if err != nil {
+			log.Printf("Ошибка при генерации QR-кода: %v", err)
+		} else {
+			qrCodeMsg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, qrCodeFilePath)
+			s.bot.Send(qrCodeMsg)
+			if err := os.Remove(qrCodeFilePath); err != nil {
+				log.Printf("Ошибка удаления QR-кода %v", err)
+			}
+		}
+	} else {
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Сначала сократите ссылку.")
+		s.bot.Send(msg)
+	}
+}
+
+func (s *Server) allAtOnce(update tgbotapi.Update, qrCodeFilePath string) {
+	if s.shortenedURL != nil {
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Сокращенная ссылка: "+s.shortenedURL.Shortened)
+		s.bot.Send(msg)
+
+		if err := qrcode.WriteFile(s.shortenedURL.Shortened, qrcode.Medium, 256, qrCodeFilePath); err != nil {
+			log.Printf("Ошибка при генерации QR-кода: %v", err)
+		} else {
+			qrCodeMsg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, qrCodeFilePath)
+			s.bot.Send(qrCodeMsg)
+			if err := os.Remove(qrCodeFilePath); err != nil {
+				log.Printf("Ошибка удаления QR-кода %v", err)
+			}
+		}
+	} else {
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Сначала сократите ссылку.")
+		s.bot.Send(msg)
 	}
 }
 
