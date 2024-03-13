@@ -10,6 +10,7 @@ import (
 	"shortUrl/shorten_url/internal/repository"
 	"shortUrl/shorten_url/internal/service"
 	"strings"
+	"time"
 )
 
 type BotService interface {
@@ -131,6 +132,7 @@ func (b *BotAPI) GenerateQRCode(update tgbotapi.Update, qrCodeFilePath string) {
 		if err != nil {
 			log.Printf("Ошибка при генерации QR-кода: %v", err)
 		} else {
+			b.TextGeneration(update)
 			qrCodeMsg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, qrCodeFilePath)
 			b.bot.Send(qrCodeMsg)
 			if err := os.Remove(qrCodeFilePath); err != nil {
@@ -143,6 +145,12 @@ func (b *BotAPI) GenerateQRCode(update tgbotapi.Update, qrCodeFilePath string) {
 	}
 }
 
+func (b *BotAPI) TextGeneration(update tgbotapi.Update) {
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Генерация...🎲")
+	b.bot.Send(msg)
+	time.Sleep(1 * time.Second)
+}
+
 func (b *BotAPI) AllAtOnce(update tgbotapi.Update, qrCodeFilePath string) {
 	if b.shortenedURL != nil {
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Сокращенная ссылка: "+b.shortenedURL.Shortened)
@@ -151,6 +159,7 @@ func (b *BotAPI) AllAtOnce(update tgbotapi.Update, qrCodeFilePath string) {
 		if err := qrcode.WriteFile(b.shortenedURL.Shortened, qrcode.Medium, 256, qrCodeFilePath); err != nil {
 			log.Printf("Ошибка при генерации QR-кода: %v", err)
 		} else {
+			b.TextGeneration(update)
 			qrCodeMsg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, qrCodeFilePath)
 			b.bot.Send(qrCodeMsg)
 			if err := os.Remove(qrCodeFilePath); err != nil {
