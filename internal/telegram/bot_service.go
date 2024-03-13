@@ -90,9 +90,6 @@ func (b *BotAPI) HandleCommand(update tgbotapi.Update) {
 			tgbotapi.NewKeyboardButtonRow(
 				tgbotapi.NewKeyboardButton("Все сразу 📌"),
 			),
-			tgbotapi.NewKeyboardButtonRow(
-				tgbotapi.NewKeyboardButton("Отправить новую ссылку"),
-			),
 		)
 		b.bot.Send(msg)
 	default:
