@@ -83,8 +83,15 @@ func (b *BotAPI) HandleCommand(update tgbotapi.Update) {
 		msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
 			tgbotapi.NewKeyboardButtonRow(
 				tgbotapi.NewKeyboardButton("🔗Сократить ссылку"),
+			),
+			tgbotapi.NewKeyboardButtonRow(
 				tgbotapi.NewKeyboardButton("🤯Сгенерировать QR-код"),
+			),
+			tgbotapi.NewKeyboardButtonRow(
 				tgbotapi.NewKeyboardButton("📜Все сразу"),
+			),
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton("Отправить новую ссылку"),
 			),
 		)
 		b.bot.Send(msg)
