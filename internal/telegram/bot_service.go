@@ -22,6 +22,7 @@ type BotAPI struct {
 	bot              *tgbotapi.BotAPI
 	shortenRequested bool
 	shortenedURL     *domain.URL
+	urlsList         domain.ShortenedURLList
 }
 
 func NewBotAPI(bot *tgbotapi.BotAPI) *BotAPI {
@@ -70,6 +71,8 @@ func (b *BotAPI) HandleUpdate(update tgbotapi.Update) {
 		b.GenerateQRCode(update, qrCodeFilePath)
 	case "Все сразу 📌":
 		b.AllAtOnce(update, qrCodeFilePath)
+	case "Список ссылок":
+		b.SendShortenedURLList(update)
 	default:
 		b.ProcessLink(update)
 	}
@@ -89,6 +92,9 @@ func (b *BotAPI) HandleCommand(update tgbotapi.Update) {
 			),
 			tgbotapi.NewKeyboardButtonRow(
 				tgbotapi.NewKeyboardButton("Все сразу 📌"),
+			),
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton("Список ссылок"),
 			),
 		)
 		b.bot.Send(msg)
@@ -111,12 +117,33 @@ func (b *BotAPI) ProcessLink(update tgbotapi.Update) {
 			b.shortenedURL = shortenedURL
 		}
 
+		newUrl := domain.URL{
+			Original:  shortenedURL.Original,
+			Shortened: shortenedURL.Shortened,
+		}
+		b.urlsList.URLs = append(b.urlsList.URLs, newUrl)
+
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Сокращенная ссылка: "+shortenedURL.Shortened)
 		b.bot.Send(msg)
 		b.shortenRequested = false
 	} else {
 		b.UnknownCommand(update)
 	}
+}
+
+func (b *BotAPI) SendShortenedURLList(update tgbotapi.Update) {
+	var message string
+	if len(b.urlsList.URLs) == 0 {
+		message = "Список сокращенных ссылок пуст."
+	} else {
+		message = "Список сокращенных ссылок:\n"
+		for _, url := range b.urlsList.URLs {
+			message += "Оригинальная: " + url.Original + "\n" + "Сокращенная: " + url.Shortened + "\n"
+		}
+	}
+
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, message)
+	b.bot.Send(msg)
 }
 
 func (b *BotAPI) UnknownCommand(update tgbotapi.Update) {
