@@ -64,11 +64,11 @@ func (b *BotAPI) HandleUpdate(update tgbotapi.Update) {
 	}
 
 	switch update.Message.Text {
-	case "🔗Сократить ссылку":
+	case "Сократить ссылку 🔗":
 		b.RequestLink(update)
-	case "🤯Сгенерировать QR-код":
+	case "Сгенерировать QR-код 📲":
 		b.GenerateQRCode(update, qrCodeFilePath)
-	case "📜Все сразу":
+	case "Все сразу 📌":
 		b.AllAtOnce(update, qrCodeFilePath)
 	default:
 		b.ProcessLink(update)
@@ -82,13 +82,13 @@ func (b *BotAPI) HandleCommand(update tgbotapi.Update) {
 			" и делает QR-код.")
 		msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
 			tgbotapi.NewKeyboardButtonRow(
-				tgbotapi.NewKeyboardButton("🔗Сократить ссылку"),
+				tgbotapi.NewKeyboardButton("Сократить ссылку 🔗"),
 			),
 			tgbotapi.NewKeyboardButtonRow(
-				tgbotapi.NewKeyboardButton("🤯Сгенерировать QR-код"),
+				tgbotapi.NewKeyboardButton("Сгенерировать QR-код 📲"),
 			),
 			tgbotapi.NewKeyboardButtonRow(
-				tgbotapi.NewKeyboardButton("📜Все сразу"),
+				tgbotapi.NewKeyboardButton("Все сразу 📌"),
 			),
 			tgbotapi.NewKeyboardButtonRow(
 				tgbotapi.NewKeyboardButton("Отправить новую ссылку"),
@@ -123,7 +123,7 @@ func (b *BotAPI) ProcessLink(update tgbotapi.Update) {
 }
 
 func (b *BotAPI) UnknownCommand(update tgbotapi.Update) {
-	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "🤷🏻‍Я не знаю такой команды.")
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Я не знаю такой команды 🤷")
 	b.bot.Send(msg)
 }
 
