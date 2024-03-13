@@ -136,9 +136,9 @@ func (b *BotAPI) SendShortenedURLList(update tgbotapi.Update) {
 	if len(b.urlsList.URLs) == 0 {
 		message = "Список ссылок пуст."
 	} else {
-		message = "Список ссылок:\n"
+		message = "Список ссылок:\n\n"
 		for _, url := range b.urlsList.URLs {
-			message += "Оригинальная: " + url.Original + "\n" + "Сокращенная: " + url.Shortened + "\n"
+			message += "Оригинальная: " + url.Original + "\n" + "Сокращенная: " + url.Shortened + "\n\n"
 		}
 	}
 
