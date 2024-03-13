@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"shortUrl/shorten_url/internal/domain"
 	"shortUrl/shorten_url/internal/repository"
-	"time"
 )
 
 type URLService interface {
@@ -35,7 +34,6 @@ func (s *UrlService) Create(original string) (*domain.URL, error) {
 	url := &domain.URL{
 		Original:  original,
 		Shortened: fmt.Sprintf("%s%s", customDomain, shortened),
-		CreatedAt: time.Now(),
 	}
 
 	err := s.repo.Create(url)
