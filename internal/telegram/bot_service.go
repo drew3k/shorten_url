@@ -134,9 +134,9 @@ func (b *BotAPI) ProcessLink(update tgbotapi.Update) {
 func (b *BotAPI) SendShortenedURLList(update tgbotapi.Update) {
 	var message string
 	if len(b.urlsList.URLs) == 0 {
-		message = "Список сокращенных ссылок пуст."
+		message = "Список ссылок пуст."
 	} else {
-		message = "Список сокращенных ссылок:\n"
+		message = "Список ссылок:\n"
 		for _, url := range b.urlsList.URLs {
 			message += "Оригинальная: " + url.Original + "\n" + "Сокращенная: " + url.Shortened + "\n"
 		}
