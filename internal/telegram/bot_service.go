@@ -23,6 +23,7 @@ type BotAPI struct {
 	shortenRequested bool
 	shortenedURL     *domain.URL
 	urlsList         domain.ShortenedURLList
+	generationMsgID  int
 }
 
 func NewBotAPI(bot *tgbotapi.BotAPI) *BotAPI {
@@ -166,6 +167,8 @@ func (b *BotAPI) GenerateQRCode(update tgbotapi.Update, qrCodeFilePath string) {
 			b.TextGeneration(update)
 			qrCodeMsg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, qrCodeFilePath)
 			b.bot.Send(qrCodeMsg)
+			delMsg := tgbotapi.NewDeleteMessage(update.Message.Chat.ID, b.generationMsgID)
+			b.bot.Send(delMsg)
 			if err := os.Remove(qrCodeFilePath); err != nil {
 				log.Printf("Ошибка удаления QR-кода %v", err)
 			}
@@ -178,7 +181,9 @@ func (b *BotAPI) GenerateQRCode(update tgbotapi.Update, qrCodeFilePath string) {
 
 func (b *BotAPI) TextGeneration(update tgbotapi.Update) {
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Генерация...🎲")
-	b.bot.Send(msg)
+	sentMsg, _ := b.bot.Send(msg)
+	b.generationMsgID = sentMsg.MessageID
+
 	time.Sleep(1 * time.Second)
 }
 
@@ -193,6 +198,8 @@ func (b *BotAPI) AllAtOnce(update tgbotapi.Update, qrCodeFilePath string) {
 			b.TextGeneration(update)
 			qrCodeMsg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, qrCodeFilePath)
 			b.bot.Send(qrCodeMsg)
+			delMsg := tgbotapi.NewDeleteMessage(update.Message.Chat.ID, b.generationMsgID)
+			b.bot.Send(delMsg)
 			if err := os.Remove(qrCodeFilePath); err != nil {
 				log.Printf("Ошибка удаления QR-кода %v", err)
 			}
