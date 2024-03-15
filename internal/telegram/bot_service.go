@@ -21,7 +21,7 @@ type BotService interface {
 type BotAPI struct {
 	bot              *tgbotapi.BotAPI
 	shortenRequested bool
-	Url              *domain.URL
+	url              *domain.URL
 	urlsList         domain.ShortenedURLList
 	generationMsgID  int
 }
@@ -108,23 +108,23 @@ func (b *BotAPI) ProcessLink(update tgbotapi.Update) {
 	if strings.HasPrefix(update.Message.Text, "http://") || strings.HasPrefix(update.Message.Text, "https://") {
 		urlRepo := repository.NewInMemoryURLRepository()
 		urlService := service.NewUrlService(urlRepo)
-		Url, err := urlService.Create(update.Message.Text)
+		url, err := urlService.Create(update.Message.Text)
 		if err != nil {
 			log.Printf("Ошибка при сокращении URL: %v", err)
 			return
 		}
 
 		if b.shortenRequested {
-			b.Url = Url
+			b.url = url
 		}
 
 		newUrl := domain.URL{
-			Original:  Url.Original,
-			Shortened: Url.Shortened,
+			Original:  url.Original,
+			Shortened: url.Shortened,
 		}
 		b.urlsList.URLs = append(b.urlsList.URLs, newUrl)
 
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Сокращенная ссылка: "+Url.Shortened)
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Сокращенная ссылка: "+url.Shortened)
 		b.bot.Send(msg)
 		b.shortenRequested = false
 	} else {
@@ -159,8 +159,8 @@ func (b *BotAPI) RequestLink(update tgbotapi.Update) {
 }
 
 func (b *BotAPI) GenerateQRCode(update tgbotapi.Update, qrCodeFilePath string) {
-	if b.Url != nil {
-		err := qrcode.WriteFile(b.Url.Shortened, qrcode.Medium, 256, qrCodeFilePath)
+	if b.url != nil {
+		err := qrcode.WriteFile(b.url.Shortened, qrcode.Medium, 256, qrCodeFilePath)
 		if err != nil {
 			log.Printf("Ошибка при генерации QR-кода: %v", err)
 		} else {
@@ -188,11 +188,11 @@ func (b *BotAPI) TextGeneration(update tgbotapi.Update) {
 }
 
 func (b *BotAPI) AllAtOnce(update tgbotapi.Update, qrCodeFilePath string) {
-	if b.Url != nil {
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Сокращенная ссылка: "+b.Url.Shortened)
+	if b.url != nil {
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Сокращенная ссылка: "+b.url.Shortened)
 		b.bot.Send(msg)
 
-		if err := qrcode.WriteFile(b.Url.Shortened, qrcode.Medium, 256, qrCodeFilePath); err != nil {
+		if err := qrcode.WriteFile(b.url.Shortened, qrcode.Medium, 256, qrCodeFilePath); err != nil {
 			log.Printf("Ошибка при генерации QR-кода: %v", err)
 		} else {
 			b.TextGeneration(update)
