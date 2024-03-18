@@ -35,6 +35,6 @@ func (s *Server) Run() error {
 		return err
 	}
 	s.SetupRoutes()
-	go s.bot.StartTelegramBot()
+	s.bot.StartTelegramBot()
 	return s.router.Run(":8080")
 }
