@@ -22,19 +22,17 @@ func NewServer(bot telegram.BotService) *Server {
 	}
 }
 
-func (s *Server) SetupRoutes() {
+func (s *Server) Run() error {
+	if err := s.bot.Initialize(); err != nil {
+		return err
+	}
+
 	urlRepo := repository.NewInMemoryURLRepository()
 	urlService := service.NewUrlService(urlRepo)
 	urlHandler := http.NewURLHandler(urlService)
 
 	s.router.POST("/shorten", urlHandler.ShortenURL)
-}
 
-func (s *Server) Run() error {
-	if err := s.bot.Initialize(); err != nil {
-		return err
-	}
-	s.SetupRoutes()
 	s.bot.StartTelegramBot()
 	return s.router.Run(":8080")
 }
