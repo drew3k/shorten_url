@@ -14,6 +14,10 @@ type RequestBody struct {
 	Original string `json:"original"`
 }
 
+type ErrorResponse struct {
+	Message string `json:"message"`
+}
+
 func NewURLHandler(service service.URLService) *URLHandler {
 	return &URLHandler{
 		service: service,
@@ -23,14 +27,18 @@ func NewURLHandler(service service.URLService) *URLHandler {
 func (h *URLHandler) ShortenURL(c *gin.Context) {
 	var param RequestBody
 	if err := c.BindJSON(&param); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Message: err.Error(),
+		})
 		return
 	}
 
 	shortenedUrl, err := h.service.Create(param.Original)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to shorten URL"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Message: err.Error(),
+		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"shortened_url": shortenedUrl.Shortened})
+	c.JSON(http.StatusOK, shortenedUrl)
 }
