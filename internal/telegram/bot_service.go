@@ -66,14 +66,12 @@ func (b *BotAPI) HandleUpdate(update tgbotapi.Update) {
 	}
 
 	switch update.Message.Text {
+	case "Все сразу 📌":
+		b.AllAtOnce(update, qrCodeFilePath)
 	case "Сократить ссылку 🔗":
 		b.RequestLink(update)
 	case "Сгенерировать QR-код 📲":
 		b.GenerateQRCode(update, qrCodeFilePath)
-	case "Все сразу 📌":
-		b.AllAtOnce(update, qrCodeFilePath)
-	case "Список ссылок":
-		b.SendShortenedURLList(update)
 	default:
 		b.ProcessLink(update)
 	}
@@ -86,16 +84,13 @@ func (b *BotAPI) HandleCommand(update tgbotapi.Update) {
 			" и делает QR-код.")
 		msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
 			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton("Все сразу 📌"),
+			),
+			tgbotapi.NewKeyboardButtonRow(
 				tgbotapi.NewKeyboardButton("Сократить ссылку 🔗"),
 			),
 			tgbotapi.NewKeyboardButtonRow(
 				tgbotapi.NewKeyboardButton("Сгенерировать QR-код 📲"),
-			),
-			tgbotapi.NewKeyboardButtonRow(
-				tgbotapi.NewKeyboardButton("Все сразу 📌"),
-			),
-			tgbotapi.NewKeyboardButtonRow(
-				tgbotapi.NewKeyboardButton("Список ссылок"),
 			),
 		)
 		b.bot.Send(msg)
@@ -130,21 +125,6 @@ func (b *BotAPI) ProcessLink(update tgbotapi.Update) {
 	} else {
 		b.UnknownCommand(update)
 	}
-}
-
-func (b *BotAPI) SendShortenedURLList(update tgbotapi.Update) {
-	var message string
-	if len(b.urlsList.URLs) == 0 {
-		message = "Список ссылок пуст."
-	} else {
-		message = "Список ссылок:\n\n"
-		for _, url := range b.urlsList.URLs {
-			message += "Оригинальная: " + url.Original + "\n" + "Сокращенная: " + url.Shortened + "\n\n"
-		}
-	}
-
-	msg := tgbotapi.NewMessage(update.Message.Chat.ID, message)
-	b.bot.Send(msg)
 }
 
 func (b *BotAPI) UnknownCommand(update tgbotapi.Update) {
